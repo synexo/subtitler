@@ -62,7 +62,7 @@ def init_model(model_size: str):
         print(f"loading whisper's '{load_model_pref()}' model")
         return whisper.load_model(load_model_pref(),device=device)
     else:
-        model_sizes = ["large-v3","large-v2","large","medium","small","base","tiny"]
+        model_sizes = ["turbo","large-v3","large-v2","large","medium","small","base","tiny"]
         for model_size in model_sizes:
             try:
                 model = whisper.load_model(model_size,device=device)
@@ -147,7 +147,7 @@ def translate_transcribed_result(transcribed_result, transcribed_language, targe
             result_obj["text"] = "."
     return translated_result
 
-def save_result_as_srt(result: dict, target_language: str, video_file_name: str, default_srt_file: bool=False):
+def save_result_as_srt(result: dict, target_language: str, video_file_name: str):
 
     def get_lang_iso_code(lang):
         if lang in TRANSCRIPTION_SUPPORTED_LANGS:
@@ -156,16 +156,13 @@ def save_result_as_srt(result: dict, target_language: str, video_file_name: str,
             return TRANSLATION_SUPPORTED_LANGS[lang]
     
     target_language = target_language.lower()
-    if default_srt_file:
-        srt_file_name = ".".join(video_file_name.split(".")[:-1])+".default."+get_lang_iso_code(target_language)+".srt"
-    else:
-        srt_file_name = ".".join(video_file_name.split(".")[:-1])+"."+get_lang_iso_code(target_language)+".srt"
+    srt_file_name = ".".join(video_file_name.split(".")[:-1])+"."+get_lang_iso_code(target_language)+".srt"
     if os.name == 'nt':
-        with open(srt_file_name,"w", encoding='cp850', errors='replace') as f:
+        with open(srt_file_name,"w", encoding='utf-8', errors='replace') as f:
             for id, result_obj in result.items():
                 f.write(str(id)+"\n")
                 f.write(str(result_obj["start_time"])+" --> "+str(result_obj["end_time"])+"\n")
-                f.write(result_obj["text"].encode('cp850','replace').decode('cp850'))
+                f.write(result_obj["text"].encode('utf-8','replace').decode('utf-8'))
                 f.write("\n\n")
         return srt_file_name
     else:
@@ -218,7 +215,7 @@ def subtitle(vid_file_map: dict, audio_files: list, video_language: str, transla
         r=transcribe_audio(model, audio_file, video_language)
         print("Done.\nSaving...")
         print_and_update_progress(update_progress=True)
-        saved_file = save_result_as_srt(r,video_language,vid_file_map[audio_file],True)
+        saved_file = save_result_as_srt(r,video_language,vid_file_map[audio_file])
         print(f"Done. Saved transcribed result as srt file: {saved_file}")
         print_and_update_progress(update_progress=True)
         for translation_lang in translation_languages:
